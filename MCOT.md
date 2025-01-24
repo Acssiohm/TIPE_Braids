@@ -1,4 +1,4 @@
-# Motivation (au maximum 50 mots)
+## Motivation (au maximum 50 mots)
 1) Peut-être trop général sur les algos post-quantiques, mais vraiment c'qui s'est passé :
 Avec l'avènement qui semble imminent de la suprématie quantique, la recherche d'algorithmes 
 plus robustes et théoriquement prouvés comme difficiles s'est intensifiée et suscite 
@@ -10,25 +10,25 @@ de se composant reste caché pour garantir la sécurité. C'est pour cela que no
 à la manière dont on peut transformer un circuit en un circuit équivalent qu'il serait très difficile à
 comprendre (à modifier et résumer : 62 mots )
 
-# Rapport au thème (au maximum 50 mots)
+## Rapport au thème (au maximum 50 mots)
 Notre TIPE s'inscrit donc dans le thème de l'année à la fois sur le principe de transformer un circuit
 en un autre plus sécurisé, que dans sa démarche globale de transition post-quantique car les 
 algorithmes en jeu ont été conçus avec sécurité faces aux algorithmes quantiques en tête.
 ( à reformuler je pense. 48 mots )
 
-# Bibliographie commentée (au maximum 650 mots)
+## Bibliographie commentée (au maximum 650 mots)
 
 
-# Problématique retenue (au maximum 50 mots)
+## Problématique retenue (au maximum 50 mots)
 
-# Objectifs du TIPE Acssiohm (au maximum 100 mots)
+## Objectifs du TIPE Acssiohm (au maximum 100 mots)
 
-# Objectifs du TIPE Marius (au maximum 100 mots)
-
-
+## Objectifs du TIPE Marius (au maximum 100 mots)
 
 
-# Brouillon général ( au maximum 10^10 mots )
+
+
+### Brouillon général ( au maximum 10^10 mots )
 Le problème de garder en sécurité un circuit électronique....etc.
 ET/OU
 Avec l'avènement de la suprématie quantique, de nombreux algorithmes quantiques
