@@ -130,33 +130,47 @@ class Braid :
 		return (self/other).is_null()
 
 	def is_null(self) -> bool :
+		self.simplify_epsilons()
 		return self.reduction_poignees()
 
-	def retourner(self) :
+	# -+ --> +- si e = 1 , +- --> -+ si e = -1
+	def retourner(self, e=1) :
 		stable = False
+		x = self.copy()
 		while not stable :
 			self.simplify_epsilons()
 			i = 0
 			stable = True
 			while i < len(self.braid) - 1 :
 				j = i + 1
-				if self.braid[i] < 0 and self.braid[j] > 0 :
+				if e*self.braid[i] < 0 and e*self.braid[j] > 0 :
 					stable = False
 					si = -self.braid[i]
 					sj = self.braid[j]
-					diff = abs(si - sj) 
+
+					diff = abs(abs(si) - abs(sj)) 
 					if diff > 1 :
 						self.braid[i] = sj
 						self.braid[j] = -si 
+						assert(x == self)
 					elif diff == 0 :
+						y = self.copy()
 						self.braid[i] = 0
 						self.braid[j] = 0
+
+						if(y != self) :
+							print(self, y)
+							exit(0)
+
 					else : # diff == 1
 						self.braid[i] = sj
 						self.braid[j] = si
 						self.braid.insert(j+1, -sj)
 						self.braid.insert(j+2, -si)
+						assert(x == self)
+
 				i += 1 
+		self.simplify_epsilons()
 	
 	def reduire_en_mot_vide(self) :
 		self.retourner()
@@ -254,16 +268,126 @@ class Braid :
 	def __str__(self) :
 		return self.to_letters()
 
+	def __repr__(self):
+		return self.to_letters()
+
+	def calc_permutation(self):
+		"""
+		calcule la permutation induite par une tresse sur les brins
+		"""
+		perm = list(range(self.n + 1))
+		for generator in self.braid:
+			i = abs(generator) - 1
+			perm[i], perm[i + 1] = perm[i + 1], perm[i]
+		return tuple(perm)
+	
+
+def delta_n(n):
+	"""
+	génère la TF ∆n
+	"""
+	delta = []
+	for k in range(1, n):
+		for i in range(1, n - k + 1):
+			delta.append(i)
+	return Braid(delta)
+
+def grille(u, v):
+	x = u.inv()*v
+	x.retourner()
+	assert(u.inv()*v == x)
+	vp = Braid([ s for s in x.braid if s > 0])
+	up = Braid([ s for s in x.braid if s < 0])
+	assert(vp.braid + up.braid == x.braid)
+	up = up.inv()
+	assert(u*vp == v*up)
+	return (up, vp)
+
+def anti_grille(u, v):
+	x = u*v.inv()
+	x.retourner(-1)
+	up = Braid([ s for s in x.braid if s > 0])
+	vp = Braid([ s for s in x.braid if s < 0])
+	assert(vp.braid + up.braid == x.braid)
+	vp = vp.inv()
+	assert(vp*u==up*v)
+	return (up, vp)
+
+def pgcd_comp_a(a, b):
+	(c, d) = grille(a, b) # ad = bc
+	(e, f) = anti_grille(c, d) # ed = fc
+	(g, p) = anti_grille(a, e) # pa = ge et p = 1 --> a = ge
+	assert(p.braid == [])
+	assert(a == g*e)
+	return (g, e) # pgcd(a, b) , (g\a)
+
+def dr(t,  dn):
+	(x, res) = pgcd_comp_a(dn, t)
+	assert( x == t )
+	assert(x*res == dn)
+	return res
+
+def PaveA(t, s, dn):
+	return pgcd_comp_a(t*s, dn)
+
+def MultGauche(S, t, dn):
+	Sp = []
+	curr_t = t
+	for s in S :
+		(sp, tp) = PaveA(curr_t, s, dn)
+		Sp.append(sp)
+		curr_t = tp
+	Sp.append(curr_t)
+	# print(S, Sp, t)
+	return Sp
+
+# def PaveP(t, s, dn):
+# 	return pgcd_comp_a(s*t, dn)
+
+def phi(t, m, n):
+	if m % 2 == 1 :
+		return Braid([ n-s for s in t.braid])
+	return t.copy()
+
+def add_simple_to_normal_form(forme_normale, t, e, n, dn):
+	m = forme_normale[0]
+	# print(m)
+	if e == 1:
+		t0 = phi(t, m, n)
+	elif e == -1 :
+		t0 = phi(dr(t, dn), m+1, n) # m+1 car on a mis dr(t) au lieu de dr_tilde(t)
+		m -= 1
+	else :
+		print("ERREUR")
+		exit(0)
+	pos_forme_normale = MultGauche(forme_normale[1], t0 , dn)
+	if pos_forme_normale[0] == dn :
+		return (m+1, pos_forme_normale[1:])
+	return (m, pos_forme_normale)
+
+def normal_form(b, n, dn):
+	S = (0, [])
+	for s in reversed(b.braid):
+		S = add_simple_to_normal_form(S, Braid([abs(s)]), signe(s), n, dn )
+		# print(S)
+	while S[1][-1].is_null():
+		S = (S[0], S[1][:-1])
+	return S
+
+def forme_normale(b, n):
+	return normal_form(b, n, delta_n(n))
+
 def generer_tresses_aleatoires(n : int, brins : int, length : int) -> Braid :
 	if length == 0 :
 		for _ in range(n):
 			yield []
 	else :
 		for l in generer_tresses_aleatoires(n, brins ,length-1):
-			i = random.randint(-brins, brins)
+			i = random.randint(-(brins-1), brins-1)
 			if i == 0 :
 				i = 1
 			yield [i]+l
+
 
 def time_test (n : int, brins : int, size: int ) -> (float, float, float) :
 	duree1 = 0
@@ -290,7 +414,34 @@ def time_test (n : int, brins : int, size: int ) -> (float, float, float) :
 def time_tests(n : int, brins : int, max_size : int) -> list :
 	assert(max_size > 2)
 	res = [time_test(n, brins, s) for s in range(2, max_size)]
+	return res
 
-b1 = Braid([-2, -2, -1, -1, 2, 2, 1, 1])
-b2 = Braid([1, 1, 2, -1, -1, -1])
-print(b1 == b2)
+def braid_of_string( s ) :
+	res = []
+	for a in s :
+		i = ord(s)
+		if ord('a') <= i <= ord('z') :
+			res.append(i-ord('a')+1)
+		elif ord('Z') <= i <= ord('Z'):
+			res.append( - (i-ord('A')+1) )
+		else :
+			print("unrecognized letter ", a )
+			exit(1)
+	return res 
+
+def braid_of_normal(nf, n):
+	m = nf[0]
+	S = nf[1]
+	res = delta_n(n)**m
+	for b in S :
+		res = res*b
+	return res
+
+def test_normal(b, n):
+	return b == braid_of_normal( forme_normale(b,n), n)
+
+
+# print(forme_normale(Braid([-1]), 3), test_normal(Braid([-1, 2, 1]), 3))
+# N = 6
+# for b in generer_tresses_aleatoires(100, N, 10):
+	# print(test_normal(Braid(b), N))
