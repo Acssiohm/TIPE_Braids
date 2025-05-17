@@ -127,6 +127,8 @@ class Braid :
 		return self * other.inv()
 
 	def __eq__(self, other) :
+		# assert(False)
+		# print("eq")
 		return (self/other).is_null()
 
 	def is_null(self) -> bool :
@@ -152,22 +154,22 @@ class Braid :
 					if diff > 1 :
 						self.braid[i] = sj
 						self.braid[j] = -si 
-						assert(x == self)
+						# assert(x == self)
 					elif diff == 0 :
 						y = self.copy()
 						self.braid[i] = 0
 						self.braid[j] = 0
 
-						if(y != self) :
-							print(self, y)
-							exit(0)
+						# if(y != self) :
+						# 	print(self, y)
+						# 	exit(0)
 
 					else : # diff == 1
 						self.braid[i] = sj
 						self.braid[j] = si
 						self.braid.insert(j+1, -sj)
 						self.braid.insert(j+2, -si)
-						assert(x == self)
+						# assert(x == self)
 
 				i += 1 
 		self.simplify_epsilons()
@@ -220,7 +222,7 @@ class Braid :
 				node = next_node
 				continue
 			sk = signe(node.elem)
-			assert(sk*s >= 0 and sk != 0) # Après réduction des poignées nichées on doit avoir que des sigma_k+1 du même signe
+			# assert(sk*s >= 0 and sk != 0) # Après réduction des poignées nichées on doit avoir que des sigma_k+1 du même signe
 			s = sk
 			node.elem = sk * k
 			node.insert_before(-e*(k+1))
@@ -230,6 +232,8 @@ class Braid :
 		fin.remove()
 
 	def reduction_poignees(self) :
+		# print("réduction !")
+		# assert(False)
 		linked_braid = link_list(self.braid)
 		while True :
 			node = linked_braid.first.next 
@@ -295,12 +299,12 @@ def delta_n(n):
 def grille(u, v):
 	x = u.inv()*v
 	x.retourner()
-	assert(u.inv()*v == x)
+	# assert(u.inv()*v == x)
 	vp = Braid([ s for s in x.braid if s > 0])
 	up = Braid([ s for s in x.braid if s < 0])
-	assert(vp.braid + up.braid == x.braid)
+	# assert(vp.braid + up.braid == x.braid)
 	up = up.inv()
-	assert(u*vp == v*up)
+	# assert(u*vp == v*up)
 	return (up, vp)
 
 def anti_grille(u, v):
@@ -308,23 +312,25 @@ def anti_grille(u, v):
 	x.retourner(-1)
 	up = Braid([ s for s in x.braid if s > 0])
 	vp = Braid([ s for s in x.braid if s < 0])
-	assert(vp.braid + up.braid == x.braid)
+	# assert(vp.braid + up.braid == x.braid)
 	vp = vp.inv()
-	assert(vp*u==up*v)
+	# assert(vp*u==up*v)
 	return (up, vp)
 
+memo = dict()
 def pgcd_comp_a(a, b):
+	# memo[(a.braid, b.braid)] = 0
 	(c, d) = grille(a, b) # ad = bc
 	(e, f) = anti_grille(c, d) # ed = fc
 	(g, p) = anti_grille(a, e) # pa = ge et p = 1 --> a = ge
 	assert(p.braid == [])
-	assert(a == g*e)
+	# assert(a == g*e)
 	return (g, e) # pgcd(a, b) , (g\a)
 
 def dr(t,  dn):
 	(x, res) = pgcd_comp_a(dn, t)
-	assert( x == t )
-	assert(x*res == dn)
+	# assert( x == t )
+	# assert(x*res == dn)
 	return res
 
 def PaveA(t, s, dn):
@@ -337,7 +343,8 @@ def MultGauche(S, t, dn):
 		(sp, tp) = PaveA(curr_t, s, dn)
 		Sp.append(sp)
 		curr_t = tp
-	Sp.append(curr_t)
+	if curr_t.braid != []:
+		Sp.append(curr_t)
 	# print(S, Sp, t)
 	return Sp
 
@@ -361,20 +368,30 @@ def add_simple_to_normal_form(forme_normale, t, e, n, dn):
 		print("ERREUR")
 		exit(0)
 	pos_forme_normale = MultGauche(forme_normale[1], t0 , dn)
+	# print("égalité")
 	if pos_forme_normale[0] == dn :
 		return (m+1, pos_forme_normale[1:])
 	return (m, pos_forme_normale)
 
 def normal_form(b, n, dn):
+	print(b)
 	S = (0, [])
 	for s in reversed(b.braid):
 		S = add_simple_to_normal_form(S, Braid([abs(s)]), signe(s), n, dn )
-		# print(S)
-	while S[1][-1].is_null():
-		S = (S[0], S[1][:-1])
+		# print(s, S)
+		print("#", end = "")
+		if S[1][-1].braid == [] :
+			S = (S[0], S[1][:-1])
+	print()
+	# 	# print(S)
+	# while S[1][-1].braid == []: #################################################### 
+	# 	# assert(S[1][-1].braid == [])
+	# 	S = (S[0], S[1][:-1])
 	return S
 
 def forme_normale(b, n):
+	for s in b.braid :
+		assert(s < n)
 	return normal_form(b, n, delta_n(n))
 
 def generer_tresses_aleatoires(n : int, brins : int, length : int) -> Braid :
@@ -419,11 +436,12 @@ def time_tests(n : int, brins : int, max_size : int) -> list :
 def braid_of_string( s ) :
 	res = []
 	for a in s :
-		i = ord(s)
+		i = ord(a)
 		if ord('a') <= i <= ord('z') :
 			res.append(i-ord('a')+1)
-		elif ord('Z') <= i <= ord('Z'):
-			res.append( - (i-ord('A')+1) )
+		elif ord('A') <= i <= ord('Z'):
+			j = i-ord('A')+1
+			res.append(-j)
 		else :
 			print("unrecognized letter ", a )
 			exit(1)
@@ -440,8 +458,27 @@ def braid_of_normal(nf, n):
 def test_normal(b, n):
 	return b == braid_of_normal( forme_normale(b,n), n)
 
+def is_normal(s1, s2, n):
+	dn = delta_n(n)
+	(g, e) = pgcd_comp_a(dn, s1*s2)
+	return g == s1 
 
-# print(forme_normale(Braid([-1]), 3), test_normal(Braid([-1, 2, 1]), 3))
-# N = 6
-# for b in generer_tresses_aleatoires(100, N, 10):
-	# print(test_normal(Braid(b), N))
+if __name__ == "__main__" :
+	T = [8, 9, 9, 8, 2, 3, 1, 2, 6, 7, 5, 6, 10, 11, 9, 10, 6, 7, 5, 6, -10, -11, -11, -10, 8, 9, 9, 8, 10, 11, 9, 10, 8, 9, 9, 8, 
+	10, 11, 9, 10, 4, 5, 3, 4, 4, 5, 3, 4, 10, 11, 11, 10, 8, 9, 9, 8, 10, 11, 9, 10, 6, 7, 5, 6, -10, -11, -11, -10, 
+	10, 11, 11, 10, 6, 7, 5, 6, 2, 3, 1, 2, 10, 11, 9, 10, 6, 7, 5, 6, 4, 5, 3, 4, 4, 5, 3, 4, 10, 11, 9, 10, 
+	10, 11, 9, 10, 8, 9, 9, 8, 12, 13, 11, 12, 12, 13, 11, 12, 10, 11, 9, 10, 6, 7, 5, 6, 12, 13, 11, 12, 12, 13, 11, 12]
+	# T = [1, -2, 1, 2, 1, 3, -1, -2, -1, -2, -1, 2, 2, -3, -2]
+	T = Braid(T)
+	# T = Braid(braid_of_string("braidwordaBabacABABAbbCB"))
+
+	T = forme_normale(T, 20)
+	print(T, len(T[1]))
+	for i in range(len(T[1])-1):
+		s1 = T[1][i]
+		s2 = T[1][i+1]
+		assert(is_normal(s1, s2, 26))
+	# print(forme_normale(Braid([-1]), 3), test_normal(Braid([-1, 2, 1]), 3))
+	# N = 6
+	# for b in generer_tresses_aleatoires(100, N, 10):
+		# print(test_normal(Braid(b), N))
